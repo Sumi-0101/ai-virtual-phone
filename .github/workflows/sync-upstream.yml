@@ -1,0 +1,38 @@
+name: Sync upstream main
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Sync from upstream
+        run: |
+          git remote add upstream https://github.com/xiaolongbao0709/ai-virtual-phone.git
+          git fetch upstream main
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git merge-base --is-ancestor HEAD upstream/main; then
+            git merge --ff-only upstream/main
+            git push origin HEAD:main
+          elif git merge-base --is-ancestor upstream/main HEAD; then
+            echo "Already up to date"
+          else
+            echo "Fork main has diverged from upstream; manual review required"
+            exit 1
+          fi
